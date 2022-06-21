@@ -41,6 +41,21 @@ const vis: Boxplot = {
 
             default: '0'
 
+        }, 
+
+        orientation: {
+            type: 'string',
+
+             label: 'Graph Orientation',
+
+             values: [
+                {"Horizontal": "horizontal"}, 
+                {"Vertical": 'vertical'}
+            ],
+
+            display: 'radio',
+
+            default: 'horizontal'
         }
 
     },
@@ -141,125 +156,250 @@ const vis: Boxplot = {
             .style('font', '12px times')
             .style("padding", "10px")
 
-            //make axes labels
-            svg.append("text")
-            .attr("class", "x label")
-            .attr("text-anchor", "end")
-            .attr("x", width)
-            .attr("y", height-6)
-            .text(allFieldsLabel[1])
-            .style("padding", "10px");
-
-            svg.append("text")
-            .attr("class", "y label")
-            .attr("text-anchor", "end")
-            .attr("y", 6)
-            .attr("dy", ".75em")
-            .attr("transform", "rotate(-90)")
-            .text(allFieldsLabel[2])
 
 
-            const widthMargin = 30;
-            const heightMargin = 40;
-            const g = svg.append('g')
 
-            let yMin = 0
-            if (config.yMin === 'min') yMin = d3.min(numberData);
-            // Create scale
-            const yscale = d3.scaleLinear()
-            .domain([yMin, d3.max(numberData)])
-            .range([height-heightMargin, 0]);
+                
+                //this is where it is unique to horizontal orientation
+            if (config.orientation === 'horizontal'){
+                //make axes labels
+                svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "end")
+                .attr("x", width)
+                .attr("y", height-6)
+                .text(allFieldsLabel[1])
+                .style("padding", "10px");
 
-            // Add scales to axis
-            let y_axis = d3.axisLeft()
-                .scale(yscale);
+                svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "end")
+                .attr("y", 6)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text(allFieldsLabel[2])
 
-            let xScale = d3.scaleBand().range ([0, width-widthMargin]).domain(categoricalUnique.map((c)=> c)).padding(0.4)
-            let x_axis = d3.axisBottom().scale(xScale)
-            //var color = d3.scale.ordinal().range([0, width-margin]).domain(['#015836', '#33658A', '#86BBD8', '#779B59', '#A7C957', '#F8BD4F', '#C76228','#8C4843', '#9E643C', '#AF929D']);
+
+                const widthMargin = 30;
+                const heightMargin = 40;
+                const g = svg.append('g')
+
+                let yMin = 0
+                if (config.yMin === 'min') yMin = d3.min(numberData);
+                // Create scale
+                const yscale = d3.scaleLinear()
+                .domain([yMin, d3.max(numberData)])
+                .range([height-heightMargin, 0]);
+
+                // Add scales to axis
+                let y_axis = d3.axisLeft()
+                    .scale(yscale);
+
+                let xScale = d3.scaleBand().range ([0, width-widthMargin]).domain(categoricalUnique.map((c)=> c)).padding(0.4)
+                let x_axis = d3.axisBottom().scale(xScale)
+                
+                //Append group and insert axis
+                g.append("g")
+                .attr("transform", "translate(50, 0)")
+                .call(y_axis);
+
+                g.append("g")
+                .attr("transform", "translate(50, "+(height - heightMargin)+")")
+                .call(x_axis);
+
+                
+                //create functions for hover tooltip
+                const mouseover = (event, d) => {
+                    console.log('pagex', event.pageX)
+                    tooltip.style("opacity", 1);
+                    console.log("made it to here")
+                };
             
-            //Append group and insert axis
-            g.append("g")
-            .attr("transform", "translate(50, 0)")
-            .call(y_axis);
-
-            g.append("g")
-            .attr("transform", "translate(50, "+(height - heightMargin)+")")
-            .call(x_axis);
-
+                const mouseleave = (event, d) => {
+                    tooltip.style('opacity', 0);
+                }
             
-            //create functions for hover tooltip
-            const mouseover = (event, d) => {
-                console.log('pagex', event.pageX)
-                tooltip.style("opacity", 1);
-                console.log("made it to here")
-              };
-        
-              const mouseleave = (event, d) => {
-                tooltip.style('opacity', 0);
-              }
-        
-              const mousemove = (event, d) => {
-                console.log("this is working")
-                tooltip.html(`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
-                d3.select('#tooltip')
-                .style('left', (event.pageX+10) + 'px')
-                .style('top', (event.pageY+10) + 'px')
+                const mousemove = (event, d) => {
+                    console.log("this is working")
+                    tooltip.html(`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
+                    d3.select('#tooltip')
+                    .style('left', (event.pageX+10) + 'px')
+                    .style('top', (event.pageY+10) + 'px')
+                    }
+
+                //make bar graphs
+                g.selectAll(".bar")
+                .data(bounds)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function(d) { return xScale(d.category)+50; })
+                .attr("y", function(d) { return yscale(d.q3); })
+                .attr("width", xScale.bandwidth())
+                .attr("height", function(d) { return height - heightMargin - yscale(d.q3-d.q1 + yMin); })
+                .attr("fill", function(d) {return d.color})
+                // .style("background-color", function(d, i) {
+                //     return color(i);})
+                .on('mousemove', mousemove)
+                .on('mouseover', mouseover)
+                .on('mouseleave', mouseleave)
+
+                g
+                .selectAll("medianLines")
+                .data(bounds)
+                .enter()
+                .append("line")
+                .attr("x1", function(d){return xScale(d.category)+50;})
+                .attr("x2", function(d){return xScale(d.category) + xScale.bandwidth() +50;})
+                .attr("y1", function(d){return yscale(d.median)})
+                .attr("y2", function(d){return yscale(d.median)})
+                .attr("stroke", "black")
+                .style("width", 100)
+
+                g
+                .selectAll("topWhisker")
+                .data(bounds)
+                .enter()
+                .append("line")
+                .attr("x1", function(d){return xScale(d.category)+50 + xScale.bandwidth()/2})
+                .attr("x2", function(d){return xScale(d.category)+50  + xScale.bandwidth()/2;})
+                .attr("y1", function(d){return yscale(d.max)})
+                .attr("y2", function(d){return yscale(d.q3)})
+                .attr("stroke", "black")
+                .style("width", 100)
+
+
+                g
+                .selectAll("bottomWhisker")
+                .data(bounds)
+                .enter()
+                .append("line")
+                .attr("x1", function(d){return xScale(d.category)+50 + xScale.bandwidth()/2})
+                .attr("x2", function(d){return xScale(d.category)+50  + xScale.bandwidth()/2;})
+                .attr("y1", function(d){return yscale(d.q1)})
+                .attr("y2", function(d){return yscale(d.min)})
+                .attr("stroke", "black")
+                .style("width", 100)
                 }
 
-            //make bar graphs
-            g.selectAll(".bar")
-            .data(bounds)
-            .enter().append("rect")
-            .attr("class", "bar")
-            .attr("x", function(d) { return xScale(d.category)+50; })
-            .attr("y", function(d) { return yscale(d.q3); })
-            .attr("width", xScale.bandwidth())
-            .attr("height", function(d) { return height - heightMargin - yscale(d.q3-d.q1 + yMin); })
-            .attr("fill", function(d) {return d.color})
-            // .style("background-color", function(d, i) {
-            //     return color(i);})
-            .on('mousemove', mousemove)
-            .on('mouseover', mouseover)
-            .on('mouseleave', mouseleave)
-
-            g
-            .selectAll("medianLines")
-            .data(bounds)
-            .enter()
-            .append("line")
-            .attr("x1", function(d){return xScale(d.category)+50;})
-            .attr("x2", function(d){return xScale(d.category) + xScale.bandwidth() +50;})
-            .attr("y1", function(d){return yscale(d.median)})
-            .attr("y2", function(d){return yscale(d.median)})
-            .attr("stroke", "black")
-            .style("width", 100)
-
-            g
-            .selectAll("topWhisker")
-            .data(bounds)
-            .enter()
-            .append("line")
-            .attr("x1", function(d){return xScale(d.category)+50 + xScale.bandwidth()/2})
-            .attr("x2", function(d){return xScale(d.category)+50  + xScale.bandwidth()/2;})
-            .attr("y1", function(d){return yscale(d.max)})
-            .attr("y2", function(d){return yscale(d.q3)})
-            .attr("stroke", "black")
-            .style("width", 100)
 
 
-            g
-            .selectAll("bottomWhisker")
-            .data(bounds)
-            .enter()
-            .append("line")
-            .attr("x1", function(d){return xScale(d.category)+50 + xScale.bandwidth()/2})
-            .attr("x2", function(d){return xScale(d.category)+50  + xScale.bandwidth()/2;})
-            .attr("y1", function(d){return yscale(d.q1)})
-            .attr("y2", function(d){return yscale(d.min)})
-            .attr("stroke", "black")
-            .style("width", 100)
 
+            if (config.orientation === 'vertical'){
+                //make axes labels
+                svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "end")
+                .attr("x", width)
+                .attr("y", height-6)
+                .text(allFieldsLabel[2])
+                .style("padding", "10px");
+
+                svg.append("text")
+                .attr("class", "y label")
+                .attr("text-anchor", "end")
+                .attr("y", 6)
+                .attr("dy", ".75em")
+                .attr("transform", "rotate(-90)")
+                .text(allFieldsLabel[1])
+
+
+                const widthMargin = 30;
+                const heightMargin = 40;
+                const g = svg.append('g')
+
+                let xMin = 0
+                if (config.yMin === 'min') xMin = d3.min(numberData);
+                // Create scale
+                const xscale = d3.scaleLinear()
+                .domain([xMin, d3.max(numberData)])
+                .range([widthMargin+30, width-widthMargin]);
+
+                // Add scales to axis
+                let x_axis = d3.axisBottom()
+                    .scale(xscale);
+
+                let yscale = d3.scaleBand().range ([0, height-heightMargin]).domain(categoricalUnique.map((c)=> c)).padding(0.4)
+                let y_axis = d3.axisLeft().scale(yscale)
+                
+                //Append group and insert axis
+                g.append("g")
+                .attr("transform", "translate("+(80+widthMargin)+", 0)")
+                .call(y_axis);
+
+                g.append("g")
+                .attr("transform", "translate(50, "+(height - heightMargin)+")")
+                .call(x_axis);
+
+                
+                //create functions for hover tooltip
+                const mouseover = (event, d) => {
+                    tooltip.style("opacity", 1);
+                };
+            
+                const mouseleave = (event, d) => {
+                    tooltip.style('opacity', 0);
+                }
+            
+                const mousemove = (event, d) => {
+                    tooltip.html(`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
+                    d3.select('#tooltip')
+                    .style('left', (event.pageX+10) + 'px')
+                    .style('top', (event.pageY+10) + 'px')
+                    }
+
+                //make bar graphs
+                g.selectAll(".bar")
+                .data(bounds)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", function(d) { return xscale(d.q1)+50; })///correct x poiny
+                .attr("y", function(d) { return yscale(d.category); })
+                .attr("width", function(d) { return xscale(d.q3)-xscale(d.q1);})//width too big?
+                .attr("height", yscale.bandwidth())
+                .attr("fill", function(d) {return d.color})
+                // .style("background-color", function(d, i) {
+                //     return color(i);})
+                .on('mousemove', mousemove)
+                .on('mouseover', mouseover)
+                .on('mouseleave', mouseleave)
+
+                g
+                .selectAll("medianLines")
+                .data(bounds)
+                .enter()
+                .append("line")
+                .attr("x1", function(d){return xscale(d.median)+50;})
+                .attr("x2", function(d){return xscale(d.median)+50;})
+                .attr("y1", function(d){return yscale(d.category)})
+                .attr("y2", function(d){return yscale(d.category)+ yscale.bandwidth()})
+                .attr("stroke", "black")
+                .style("width", 100)
+
+                g
+                .selectAll("leftWhisker")
+                .data(bounds)
+                .enter()
+                .append("line")
+                .attr("x1", function(d){return xscale(d.min)+50})
+                .attr("x2", function(d){return xscale(d.q1)+50})
+                .attr("y1", function(d){return yscale(d.category)+ yscale.bandwidth()/2})
+                .attr("y2", function(d){return yscale(d.category)+ yscale.bandwidth()/2})
+                .attr("stroke", "black")
+                .style("width", 100)
+
+
+                g
+                .selectAll("rightWhisker")
+                .data(bounds)
+                .enter()
+                .append("line")
+                .attr("x1", function(d){return xscale(d.q3)+50})
+                .attr("x2", function(d){return xscale(d.max)+50})
+                .attr("y1", function(d){return yscale(d.category)+ yscale.bandwidth()/2})
+                .attr("y2", function(d){return yscale(d.category)+ yscale.bandwidth()/2})
+                .attr("stroke", "black")
+                .style("width", 100)
+                }
         }
 
     }
