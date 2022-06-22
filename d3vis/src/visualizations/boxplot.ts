@@ -26,22 +26,18 @@ const vis: Boxplot = {
 
     options: {
 
-        yMin: {
+        userSetMin: {
 
-             type: 'string',
+            type: 'number',
+            label: 'Axis Minimum',
+            display: 'number',
+        },
+        userSetMax: {
 
-             label: 'Minimum Y Value',
-
-             values: [
-                {"Zero": "0"}, 
-                {"Minimum Measurement": 'min'}
-            ],
-
-            display: 'radio',
-
-            default: '0'
-
-        }, 
+            type: 'number',
+            label: 'Axis Maximum',
+            display: 'number',
+        },
 
         orientation: {
             type: 'string',
@@ -184,11 +180,13 @@ const vis: Boxplot = {
                 const heightMargin = 40;
                 const g = svg.append('g')
 
-                let yMin = 0
-                if (config.yMin === 'min') yMin = d3.min(numberData);
+                let axisMin = d3.min(numberData) - (d3.max(numberData) - d3.min(numberData))*0.1
+                let axisMax = d3.max(numberData) + (d3.max(numberData) - d3.min(numberData))*0.1
+                if (config.userSetMax !== undefined && config.userSetMax !== null) axisMax = config.userSetMax;
+                if (config.userSetMin !== undefined && config.userSetMin !== null) axisMin = config.userSetMin;
                 // Create scale
                 const yscale = d3.scaleLinear()
-                .domain([yMin, d3.max(numberData)])
+                .domain([axisMin, axisMax])
                 .range([height-heightMargin, 0]);
 
                 // Add scales to axis
@@ -235,7 +233,7 @@ const vis: Boxplot = {
                 .attr("x", function(d) { return xScale(d.category)+50; })
                 .attr("y", function(d) { return yscale(d.q3); })
                 .attr("width", xScale.bandwidth())
-                .attr("height", function(d) { return height - heightMargin - yscale(d.q3-d.q1 + yMin); })
+                .attr("height", function(d) { return height - heightMargin - yscale(d.q3-d.q1+axisMin); })//+ymin?
                 .attr("fill", function(d) {return d.color})
                 // .style("background-color", function(d, i) {
                 //     return color(i);})
@@ -305,14 +303,17 @@ const vis: Boxplot = {
 
                 const widthMargin = 30;
                 const heightMargin = 40;
+                const axisShift = 30;
                 const g = svg.append('g')
 
-                let xMin = 0
-                if (config.yMin === 'min') xMin = d3.min(numberData);
+                let axisMin = d3.min(numberData) - (d3.max(numberData) - d3.min(numberData))*0.1
+                let axisMax = d3.max(numberData) + (d3.max(numberData) - d3.min(numberData))*0.1
+                if (config.userSetMax !== undefined && config.userSetMax !== null) axisMax = config.userSetMax;
+                if (config.userSetMin !== undefined && config.userSetMin !== null) axisMin = config.userSetMin;
                 // Create scale
                 const xscale = d3.scaleLinear()
-                .domain([xMin, d3.max(numberData)])
-                .range([widthMargin+30, width-widthMargin]);
+                .domain([axisMin, axisMax])
+                .range([widthMargin+axisShift, width-widthMargin]);
 
                 // Add scales to axis
                 let x_axis = d3.axisBottom()
@@ -323,7 +324,7 @@ const vis: Boxplot = {
                 
                 //Append group and insert axis
                 g.append("g")
-                .attr("transform", "translate("+(80+widthMargin)+", 0)")
+                .attr("transform", "translate("+(50+axisShift + widthMargin)+", 0)")
                 .call(y_axis);
 
                 g.append("g")
