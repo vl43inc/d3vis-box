@@ -117,6 +117,7 @@ const vis: Boxplot = {
             const categoricalData = formattedData.get(categorical)
             const categoricalUnique = [...new Set(formattedData.get(categorical))]
             const bounds = [];
+            const outliers=[];
             let colorIndex = 0
             for (const catName of categoricalUnique){
                 const color = colors[colorIndex];
@@ -133,9 +134,14 @@ const vis: Boxplot = {
                 const q3 = d3.quantile(sorted_data, 0.75)
                 const max = d3.max(sorted_data)
                 const min = d3.min(sorted_data)
-                bounds.push({category:catName, median: median, q1:q1, q3:q3, min:min, max:max, n:n, color:color})
+                const iqr = q3-q1
+                const lowerOutlier = q1 - 1.5*iqr
+                const upperOutlier = q3 + 1.5*iqr
+                outliers.push(...sorted_data.filter((elem)=> elem<lowerOutlier || elem>upperOutlier).map((out)=> {return {category:catName, value:out, color:color}}))
+                bounds.push({category:catName, median: median, q1:q1, q3:q3, min:Math.max(min, lowerOutlier), max:Math.min(max, upperOutlier), n:n, color:color})
                 colorIndex = (colorIndex +1)%colors.length
             }
+            console.log(outliers)
             console.log("bounds", bounds)
             console.log(categoricalUnique)
             console.log("numberData", numberData)
@@ -277,6 +283,19 @@ const vis: Boxplot = {
                 .attr("y2", function(d){return yscale(d.min)})
                 .attr("stroke", "black")
                 .style("width", 100)
+                
+
+                g
+                .selectAll("outliers")
+                .data(outliers)
+                .enter()
+                .append("circle")
+                .attr("class", "circ")
+                .attr("stroke", "black")
+                .attr("fill", (d) => d.color)
+                .attr("r", (d) => 3)
+                .attr("cx", (d) => xScale(d.category)+ xScale.bandwidth()/2+50)
+                .attr("cy", (d) => yscale(d.value))
                 }
 
 
@@ -400,6 +419,20 @@ const vis: Boxplot = {
                 .attr("y2", function(d){return yscale(d.category)+ yscale.bandwidth()/2})
                 .attr("stroke", "black")
                 .style("width", 100)
+                
+
+
+                g
+                .selectAll("outliers")
+                .data(outliers)
+                .enter()
+                .append("circle")
+                .attr("class", "circ")
+                .attr("stroke", "black")
+                .attr("fill", (d) => d.color)
+                .attr("r", (d) => 3)
+                .attr("cx", (d) => xscale(d.value)+50)
+                .attr("cy", (d) => yscale(d.category)+ yscale.bandwidth()/2)
                 }
         }
 
