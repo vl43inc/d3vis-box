@@ -45,8 +45,8 @@ const vis: Boxplot = {
              label: 'Graph Orientation',
 
              values: [
+                {"Vertical": 'vertical'},
                 {"Horizontal": "horizontal"}, 
-                {"Vertical": 'vertical'}
             ],
 
             display: 'radio',
@@ -168,15 +168,18 @@ const vis: Boxplot = {
 
                 
                 //this is where it is unique to horizontal orientation
-            if (config.orientation === 'horizontal'){
+            if (config.orientation === 'vertical'){
                 //make axes labels
-                svg.append("text")
+
+                
+                let xlabel = svg.append("text")
                 .attr("class", "x label")
                 .attr("text-anchor", "end")
                 .attr("x", width)
                 .attr("y", height-6)
                 .text(allFieldsLabel[1])
-                .style("padding", "10px");
+                .style("padding", "1px");
+
 
                 svg.append("text")
                 .attr("class", "y label")
@@ -188,7 +191,7 @@ const vis: Boxplot = {
 
 
                 const widthMargin = 30;
-                const heightMargin = 40;
+                const heightMargin = 55;//need to somehow be able to autoadjust this???
                 const g = svg.append('g')
 
                 let axisMin = d3.min(numberData) - (d3.max(numberData) - d3.min(numberData))*0.1
@@ -214,7 +217,25 @@ const vis: Boxplot = {
 
                 g.append("g")
                 .attr("transform", "translate(50, "+(height - heightMargin)+")")
-                .call(x_axis);
+                .call(x_axis)
+                .selectAll(".tick text")
+                .call(wrap, xScale.bandwidth()*1.6)
+
+                //draw white rectangle beneath textbox
+                console.log("bbox:", xlabel.node().getBBox())
+                svg.append("rect")
+                .attr("x", xlabel.node().getBBox().x)
+                .attr("y", xlabel.node().getBBox().y)
+                .attr("width", xlabel.node().getBBox().width)
+                .attr("height", xlabel.node().getBBox().width)
+                .attr("fill", 'white')
+                svg.append("text")
+                .attr("class", "x label")
+                .attr("text-anchor", "end")
+                .attr("x", width)
+                .attr("y", height-6)
+                .text(allFieldsLabel[1])
+                .style("padding", "1px");
 
                 
                 //create functions for hover tooltip
@@ -229,8 +250,7 @@ const vis: Boxplot = {
                 }
             
                 const mousemove = (event, d) => {
-                    console.log("this is working")
-                    tooltip.html(`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
+                    tooltip.html(`${d.category}`+ "<br/>"+`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
                     d3.select('#tooltip')
                     .style('left', (event.pageX+10) + 'px')
                     .style('top', (event.pageY+10) + 'px')
@@ -312,13 +332,37 @@ const vis: Boxplot = {
                     .attr("stroke", "black")
                     .style("width", 100)
                 }
+            
+                function wrap(text, width) {
+                    text.each(function() {
+                      var text = d3.select(this),
+                          words = text.text().split(/\s+/).reverse(),
+                          word,
+                          line = [],
+                          lineNumber = 0,
+                          lineHeight = 1.1, // ems
+                          y = text.attr("y"),
+                          dy = parseFloat(text.attr("dy")),
+                          tspan = text.text(null).append("tspan").attr("x", 0).attr("y", y).attr("dy", dy + "em")
+                      while (word = words.pop()) {
+                        line.push(word)
+                        tspan.text(line.join(" "))
+                        if (tspan.node().getComputedTextLength() > width) {
+                          line.pop()
+                          tspan.text(line.join(" "))
+                          line = [word]
+                          tspan = text.append("tspan").attr("x", 0).attr("y", y).attr("dy", `${++lineNumber * lineHeight + dy}em`).text(word)
+                        }
+                      }
+                    })
+                }
+            
+            
             }
 
 
 
-
-
-            if (config.orientation === 'vertical'){
+            if (config.orientation === 'horizontal'){
                 //make axes labels
                 svg.append("text")
                 .attr("class", "x label")
@@ -378,7 +422,7 @@ const vis: Boxplot = {
                 }
             
                 const mousemove = (event, d) => {
-                    tooltip.html(`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
+                    tooltip.html(`${d.category}`+ "<br/>"+`Num Measurements: ${d.n}`+ "<br/>" + `Median: ${Math.round(d.median*100)/100}`);
                     d3.select('#tooltip')
                     .style('left', (event.pageX+10) + 'px')
                     .style('top', (event.pageY+10) + 'px')
