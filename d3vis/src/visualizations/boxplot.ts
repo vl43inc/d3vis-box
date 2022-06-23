@@ -52,6 +52,11 @@ const vis: Boxplot = {
             display: 'radio',
 
             default: 'horizontal'
+        },
+        zeroline: {
+            type: 'boolean',
+            label: "Add Line at Zero",
+            default: false
         }
 
     },
@@ -296,7 +301,19 @@ const vis: Boxplot = {
                 .attr("r", (d) => 3)
                 .attr("cx", (d) => xScale(d.category)+ xScale.bandwidth()/2+50)
                 .attr("cy", (d) => yscale(d.value))
+
+
+                if (config.zeroline === true){
+                    g.append("line")
+                    .attr("x1", 50)
+                    .attr("x2", width-widthMargin)
+                    .attr("y1", yscale(0))
+                    .attr("y2", yscale(0))
+                    .attr("stroke", "black")
+                    .style("width", 100)
                 }
+            }
+
 
 
 
@@ -433,7 +450,18 @@ const vis: Boxplot = {
                 .attr("r", (d) => 3)
                 .attr("cx", (d) => xscale(d.value)+50)
                 .attr("cy", (d) => yscale(d.category)+ yscale.bandwidth()/2)
+                
+
+                if (config.zeroline === true){
+                    g.append("line")
+                    .attr("x1", xscale(0)+50)
+                    .attr("x2", xscale(0)+50)
+                    .attr("y1", 0)
+                    .attr("y2", height-heightMargin)
+                    .attr("stroke", "black")
+                    .style("width", 100)
                 }
+            }
         }
 
     }
