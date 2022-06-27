@@ -57,6 +57,11 @@ const vis: Boxplot = {
             type: 'boolean',
             label: "Add Line at Zero",
             default: false
+        },
+        groupColors: {
+            type: 'array',
+            label: 'Group Colors',
+            display: 'colors'
         }
 
     },
@@ -98,7 +103,8 @@ const vis: Boxplot = {
         });
 
         if (errors) { // errors === true means no errors
-            const colors = ['#015836', '#33658A', '#86BBD8', '#779B59', '#A7C957', '#F8BD4F', '#C76228','#8C4843', '#9E643C', '#AF929D']
+            //const colors = ['#015836', '#33658A', '#86BBD8', '#779B59', '#A7C957', '#F8BD4F', '#C76228','#8C4843', '#9E643C', '#AF929D']
+            const colors = config.groupColors
             const allFields = queryResponse.fields.dimensions.map((dim)=> dim.name)
             const allFieldsLabel = queryResponse.fields.dimensions.map((dim)=> dim.label_short)
             console.log("allFields", allFields) //gets names of each field
