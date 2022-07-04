@@ -53,6 +53,12 @@ const vis: Boxplot = {
 
             default: 'horizontal'
         },
+        boxColors: {
+            type: 'array',
+            label: 'Colors',
+            display:'colors'
+        }
+        ,
         zeroline: {
             type: 'boolean',
             label: "Add Line at Zero",
@@ -98,13 +104,20 @@ const vis: Boxplot = {
         });
 
         if (errors) { // errors === true means no errors
-            const colors = ['#015836', '#33658A', '#86BBD8', '#779B59', '#A7C957', '#F8BD4F', '#C76228','#8C4843', '#9E643C', '#AF929D']
+            var colors = ['#015836', '#33658A', '#86BBD8', '#779B59', '#A7C957', '#F8BD4F', '#C76228','#8C4843', '#9E643C', '#AF929D']
+            if (config.boxColors.length>0){colors = config.boxColors}
+            
             const allFields = queryResponse.fields.dimensions.map((dim)=> dim.name)
             const allFieldsLabel = queryResponse.fields.dimensions.map((dim)=> dim.label_short)
+            const allMeasures = queryResponse.fields.measures.map((m)=> m.name)
+            const allMeasuresLabel = queryResponse.fields.measures.map((m)=> m.label_short)
             console.log("allFields", allFields) //gets names of each field
             const formattedData = new Map()
             for (const field of allFields){
                 formattedData.set(field, data.map(elem => elem[field].value))
+            }
+            for (const meas of allMeasures){
+                formattedData.set(meas, data.map(elem => elem[meas].value))
             }
             console.log("formattedData", formattedData) //map of data field name to array of data
             
@@ -115,7 +128,18 @@ const vis: Boxplot = {
             
 
             // TODO: get rid of magic numbers   
-            const quantitative: string = allFields[2] //should make this adjustable? in options assumes second column is categorical, third is quantitative
+            let quantitative, quantLabel;
+
+            if (allMeasures.length > 0){
+                quantitative = allMeasures[0]
+                quantLabel = allMeasuresLabel[0]
+            } else {
+                quantitative = allFields[2] //should make this adjustable? in options assumes second column is categorical, third is quantitative
+                quantLabel = allFieldsLabel[2]
+            }
+            
+            console.log(quantitative)
+
             const categorical: string = allFields[1]
             element.innerHTML = ``; //not sure why I need this but if I remove it then it doesn't work
             const numberData = formattedData.get(quantitative)
@@ -187,7 +211,7 @@ const vis: Boxplot = {
                 .attr("y", 6)
                 .attr("dy", ".75em")
                 .attr("transform", "rotate(-90)")
-                .text(allFieldsLabel[2])
+                .text(quantLabel)
 
 
                 const widthMargin = 30;
@@ -369,7 +393,7 @@ const vis: Boxplot = {
                 .attr("text-anchor", "end")
                 .attr("x", width)
                 .attr("y", height-6)
-                .text(allFieldsLabel[2])
+                .text(quantLabel)
                 .style("padding", "10px");
 
                 svg.append("text")
