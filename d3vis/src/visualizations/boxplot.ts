@@ -64,10 +64,11 @@ const vis: Boxplot = {
             label: "Add Line at Zero",
             default: false
         },
-        groupColors: {
-            type: 'array',
-            label: 'Group Colors',
-            display: 'colors'
+        tickSize: {
+            type: 'number',
+            label: 'Tick Size',
+            display: 'number',
+            default: 10
         }
 
     },
@@ -200,11 +201,13 @@ const vis: Boxplot = {
             if (config.orientation === 'vertical'){
                 //make axes labels
 
-                
+                const widthMargin = 30;
+                const heightMargin = 55;//need to somehow be able to autoadjust this???
+
                 let xlabel = svg.append("text")
                 .attr("class", "x label")
-                .attr("text-anchor", "end")
-                .attr("x", width)
+                .attr("text-anchor", "middle")
+                .attr("x", width/2)
                 .attr("y", height-6)
                 .text(allFieldsLabel[1])
                 .style("padding", "1px");
@@ -212,15 +215,15 @@ const vis: Boxplot = {
 
                 svg.append("text")
                 .attr("class", "y label")
-                .attr("text-anchor", "end")
-                .attr("y", 6)
-                .attr("dy", ".75em")
                 .attr("transform", "rotate(-90)")
+                .attr("y", 0)
+                .attr("x",-((height-heightMargin) / 2))
+                .attr("dy", "1em")
+                .style("text-anchor", "middle")
                 .text(quantLabel)
 
 
-                const widthMargin = 30;
-                const heightMargin = 55;//need to somehow be able to autoadjust this???
+                
                 const g = svg.append('g')
 
                 let axisMin = d3.min(numberData) - (d3.max(numberData) - d3.min(numberData))*0.1
@@ -249,6 +252,7 @@ const vis: Boxplot = {
                 .call(x_axis)
                 .selectAll(".tick text")
                 .call(wrap, xScale.bandwidth()*1.6)
+                .attr("font-size", config.tickSize ?? 10)
 
                 //draw white rectangle beneath textbox
                 console.log("bbox:", xlabel.node().getBBox())
@@ -260,8 +264,8 @@ const vis: Boxplot = {
                 .attr("fill", 'white')
                 svg.append("text")
                 .attr("class", "x label")
-                .attr("text-anchor", "end")
-                .attr("x", width)
+                .attr("text-anchor", "middle")
+                .attr("x", width/2)
                 .attr("y", height-6)
                 .text(allFieldsLabel[1])
                 .style("padding", "1px");
